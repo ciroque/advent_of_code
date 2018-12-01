@@ -1,8 +1,8 @@
-package example
+package org.ciroque
 
 import scala.annotation.tailrec
 
-object Hello extends Greeting with App {
+object AoC1 extends Data with App {
   println(s"Frequency Result: ${Solution.sum(frequencies)}")
   println(s"First Duplicate Frequency: ${Solution.firstDuplicateFrequency(frequencies)}")
 }
@@ -11,24 +11,24 @@ object Solution {
   def sum(frequencies: List[Int]): Int = frequencies sum
   def firstDuplicateFrequency(frequencies: List[Int]): Int = {
     @tailrec
-    def recurses(sum: Int, freqs: List[Int], sums: Set[Int]): Int = {
+    def recurses(freqs: List[Int], sum: Int, sums: Set[Int]): Int = {
       freqs match {
         case _ if sums.contains(sum) =>
           sum
         case Nil =>
-          recurses(sum, frequencies, sums) // restarts list
+          recurses(frequencies, sum, sums) // restarts list
         case head :: tail =>
           val newSum = sum + head
           val newSums = sums + sum
-          recurses(newSum, tail, newSums)
+          recurses(tail, newSum, newSums)
       }
     }
 
-    recurses(0, frequencies, Set())
+    recurses(frequencies, 0, Set())
   }
 }
 
-trait Greeting {
+trait Data {
   lazy val frequencies: List[Int] = List(
     +3,
     +13,
