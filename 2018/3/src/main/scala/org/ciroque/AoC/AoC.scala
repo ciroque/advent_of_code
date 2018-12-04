@@ -4,15 +4,14 @@ case class Point(x: Int, y: Int)
 case class Claim(id: Int, xCoord: Int, yCoord: Int, width: Int, height: Int) {
   lazy val rightXCoord = xCoord + width - 1
   lazy val rightYCoord = yCoord + height - 1
-  lazy val claimMap: Map[Point, Int] = {
-    val x = xCoord to rightXCoord flatMap {
+  lazy val claimMap: Seq[Point] = {
+    xCoord to rightXCoord flatMap {
       x: Int =>
         yCoord to rightYCoord map {
           y: Int =>
-            Point(x, y) -> id
+            Point(x, y)
         }
     }
-    x toMap
   }
 }
 
@@ -25,7 +24,7 @@ object Solution {
   def claimedCounts(claims: Seq[Claim]) = {
     claims
       .flatMap { claim: Claim => claim.claimMap }
-      .groupBy(c => c._1)
+      .groupBy(identity)
       .mapValues(_.size)
   }
 
@@ -34,14 +33,14 @@ object Solution {
   }
 
   def uncontestedClaim(claims: Seq[Claim]): Int = {
-    val overlappingPoints = claimedCounts(claims).filter(_._2 > 1).map(_._1).toSeq
+    val overlappingPoints: Seq[Point] = claimedCounts(claims).filter(_._2 > 1).map(_._1).toSeq
 
     @scala.annotation.tailrec
     def recurses(claims: Seq[Claim], overlapping: Int, id: Int): Int = {
       claims match {
         case _ if overlapping == 0 => id
         case head :: tail =>
-          val x = head.claimMap.map(_._1).toSeq intersect overlappingPoints
+          val x = head.claimMap intersect overlappingPoints // NOTE: intersect is not short-circuiting, write something that is...
           recurses(tail, x.length, head.id)
       }
     }
