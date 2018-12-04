@@ -1,6 +1,20 @@
 package org.ciroque
 
-case class Claim(id: Int, xCoord: Int, yCoord: Int, width: Int, height: Int)
+case class Claim(id: Int, xCoord: Int, yCoord: Int, width: Int, height: Int) {
+  lazy val rightXCoord = xCoord + width - 1
+  lazy val rightYCoord = yCoord + height - 1
+  lazy val claimMap: Seq[(Int, Int)] = {
+    val x = xCoord to rightXCoord flatMap {
+      x: Int =>
+        yCoord to rightYCoord map {
+          y: Int =>
+            (x, y)
+        }
+    }
+
+    x.toList
+  }
+}
 
 object AoC extends Data with App {
   println(s"Overclaimed fabric: ${Solution.calculateOverclaimedFabric(claims)}")
@@ -8,7 +22,11 @@ object AoC extends Data with App {
 
 object Solution {
   def calculateOverclaimedFabric(claims: Seq[Claim]): Int = {
-    0
+    claims
+      .flatMap { claim: Claim => claim.claimMap }
+      .groupBy(identity)
+      .mapValues(_.size)
+      .count(claim => claim._2 > 1)
   }
 }
 
@@ -16,6 +34,7 @@ trait Data {
   val ClaimExtractor = """#(\d+) @ (\d+),(\d+): (\d+)x(\d+)""".r
 
   lazy val claims = {
+//    testData.map { claim =>
     rawData.map { claim =>
       claim match {
         case ClaimExtractor(id, xCoord, yCoord, width, height) =>
@@ -23,6 +42,12 @@ trait Data {
       }
     }
   }
+
+  lazy val testData = List(
+    "#1 @ 1,3: 4x4",
+    "#2 @ 3,1: 4x4",
+    "#3 @ 5,5: 2x2"
+  )
 
   lazy val rawData = List(
     "#1 @ 755,138: 26x19",
