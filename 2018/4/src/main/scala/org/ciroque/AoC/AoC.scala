@@ -19,10 +19,11 @@ case class NullLogEntry() extends LogEntry {
   val minute = 0
 }
 
-case class GuardMap(guard: Int, fellAsleep: Int, map: Map[Int, Int], guardMinutes: Map[Int, Seq[Int]])
+case class GuardMap(guard: Int, fellAsleep: Int, guardTotalSleepTimes: Map[Int, Int], guardSleepMinutes: Map[Int, Seq[Int]])
 
 object AoC extends Data with App {
   println(s"""{ "Strategy1": ${Solution.strategy1(logEntries)} }""")
+  println(s"""{ "Strategy2": ${Solution.strategy2(logEntries)} }""")
 }
 
 object Solution {
@@ -35,21 +36,21 @@ object Solution {
         case head :: tail => {
           head match {
             case ShiftStartLogEntry(date, hour, minute, guard) =>
-              recurses(tail, GuardMap(guard, 0, guardMap.map, guardMap.guardMinutes))
+              recurses(tail, GuardMap(guard, 0, guardMap.guardTotalSleepTimes, guardMap.guardSleepMinutes))
 
             case SleepLogEntry(date, hour, minute) =>
-              recurses(tail, GuardMap(guardMap.guard, minute, guardMap.map, guardMap.guardMinutes))
+              recurses(tail, GuardMap(guardMap.guard, minute, guardMap.guardTotalSleepTimes, guardMap.guardSleepMinutes))
 
             case WakeLogEntry(date, hour, minute) =>
               // summation of minutes asleep
-              val currentMinutes = guardMap.map.getOrElse(guardMap.guard, 0)
+              val currentMinutes = guardMap.guardTotalSleepTimes.getOrElse(guardMap.guard, 0)
               val newMinutes = currentMinutes + (minute - guardMap.fellAsleep)
 
               // maintain list of minutes asleep
               val asleepMinutes: Seq[Int] = (guardMap.fellAsleep to minute).toList
-              val newAsleepMinutes: Seq[Int] = asleepMinutes ++ guardMap.guardMinutes.getOrElse(guardMap.guard, List())
+              val newAsleepMinutes: Seq[Int] = asleepMinutes ++ guardMap.guardSleepMinutes.getOrElse(guardMap.guard, List())
 
-              recurses(tail, GuardMap(guardMap.guard, 0, guardMap.map + (guardMap.guard -> newMinutes), guardMap.guardMinutes + (guardMap.guard -> newAsleepMinutes)))
+              recurses(tail, GuardMap(guardMap.guard, 0, guardMap.guardTotalSleepTimes + (guardMap.guard -> newMinutes), guardMap.guardSleepMinutes + (guardMap.guard -> newAsleepMinutes)))
           }
         }
       }
@@ -57,7 +58,7 @@ object Solution {
 
     def findSleepiestGuard(guardMap: GuardMap): Int = {
       guardMap
-        .map
+        .guardTotalSleepTimes
         .toList
         .sortBy(_._2)
         .maxBy(_._2)
@@ -66,7 +67,7 @@ object Solution {
 
     def findSleepiestMinuteFor(guardMap: GuardMap, guard: Int): Int = {
       guardMap
-        .guardMinutes(guard)
+        .guardSleepMinutes(guard)
         .groupBy(identity)
         .mapValues(_.size)
         .toList
@@ -86,6 +87,10 @@ object Solution {
     println(s"""{ "guard": $guard :: "guardMinutes": $guardMinutes }""")
 
     guard * guardMinutes
+  }
+
+  def strategy2(logEntries: Seq[LogEntry]): Int = {
+    0
   }
 }
 
