@@ -1,32 +1,52 @@
 package org.ciroque
 
+case class Point(x: Int, y: Int)
 case class Claim(id: Int, xCoord: Int, yCoord: Int, width: Int, height: Int) {
   lazy val rightXCoord = xCoord + width - 1
   lazy val rightYCoord = yCoord + height - 1
-  lazy val claimMap: Seq[(Int, Int)] = {
+  lazy val claimMap: Map[Point, Int] = {
     val x = xCoord to rightXCoord flatMap {
       x: Int =>
         yCoord to rightYCoord map {
           y: Int =>
-            (x, y)
+            Point(x, y) -> id
         }
     }
-
-    x.toList
+    x toMap
   }
 }
 
 object AoC extends Data with App {
   println(s"Overclaimed fabric: ${Solution.calculateOverclaimedFabric(claims)}")
+  println(s"Unclaimed Id: ${Solution.uncontestedClaim(claims)}")
 }
 
 object Solution {
-  def calculateOverclaimedFabric(claims: Seq[Claim]): Int = {
+  def claimedCounts(claims: Seq[Claim]) = {
     claims
       .flatMap { claim: Claim => claim.claimMap }
-      .groupBy(identity)
+      .groupBy(c => c._1)
       .mapValues(_.size)
-      .count(claim => claim._2 > 1)
+  }
+
+  def calculateOverclaimedFabric(claims: Seq[Claim]): Int = {
+      claimedCounts(claims).count(claim => claim._2 > 1)
+  }
+
+  def uncontestedClaim(claims: Seq[Claim]): Int = {
+    val overlappingPoints = claimedCounts(claims).filter(_._2 > 1).map(_._1).toSeq
+
+    @scala.annotation.tailrec
+    def recurses(claims: Seq[Claim], overlapping: Int, id: Int): Int = {
+      claims match {
+        case _ if overlapping == 0 => id
+        case head :: tail =>
+          val x = head.claimMap.map(_._1).toSeq intersect overlappingPoints
+          recurses(tail, x.length, head.id)
+      }
+    }
+
+    recurses(claims, -1, -1)
   }
 }
 
