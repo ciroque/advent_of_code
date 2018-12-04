@@ -27,8 +27,7 @@ object AoC extends Data with App {
 }
 
 object Solution {
-  def strategy1(logEntries: Seq[LogEntry]) = {
-
+  def buildGuardMap(logEntries: Seq[LogEntry]): GuardMap = {
     @scala.annotation.tailrec
     def recurses(logEntries: Seq[LogEntry], guardMap: GuardMap): GuardMap = {
       logEntries match {
@@ -56,6 +55,12 @@ object Solution {
       }
     }
 
+    val seed = GuardMap(0, 0, Map(), Map())
+
+    recurses(logEntries, seed)
+  }
+
+  def strategy1(logEntries: Seq[LogEntry]) = {
     def findSleepiestGuard(guardMap: GuardMap): Int = {
       guardMap
         .guardTotalSleepTimes
@@ -76,9 +81,7 @@ object Solution {
         ._1
     }
 
-    val seed = GuardMap(0, 0, Map(), Map())
-
-    val guardMap: GuardMap = recurses(logEntries, seed)
+    val guardMap: GuardMap = buildGuardMap(logEntries)
 
     val guard = findSleepiestGuard(guardMap)
 
@@ -90,7 +93,15 @@ object Solution {
   }
 
   def strategy2(logEntries: Seq[LogEntry]): Int = {
-    0
+    val guardMap: GuardMap = buildGuardMap(logEntries)
+    val wtf: Map[Int, (Int, Int)] = guardMap.guardSleepMinutes map {
+      guardSleeping: (Int, Seq[Int]) =>
+        (guardSleeping._1, guardSleeping._2.groupBy(identity).mapValues(_.size).maxBy(_._2))
+    }
+
+    val sleepistGuardMinute = wtf.toList.sortBy(-_._2._2).head
+
+    sleepistGuardMinute._1 * sleepistGuardMinute._2._1
   }
 }
 
