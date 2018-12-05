@@ -22,12 +22,14 @@ case class NullLogEntry() extends LogEntry {
 case class GuardMap(guard: Int, fellAsleep: Int, guardTotalSleepTimes: Map[Int, Int], guardSleepMinutes: Map[Int, Seq[Int]])
 
 object AoC extends Data with App {
-  println(s"""{ "Strategy1": ${Solution.strategy1(logEntries)} }""")
-  println(s"""{ "Strategy2": ${Solution.strategy2(logEntries)} }""")
+  val guardMap: GuardMap = Solution.buildGuardMap(logEntries)
+  println(s"""{ "Strategy1": ${Solution.strategy1(guardMap)} }""")
+  println(s"""{ "Strategy2": ${Solution.strategy2(guardMap)} }""")
 }
 
 object Solution {
   def buildGuardMap(logEntries: Seq[LogEntry]): GuardMap = {
+
     @scala.annotation.tailrec
     def recurses(logEntries: Seq[LogEntry], guardMap: GuardMap): GuardMap = {
       logEntries match {
@@ -60,7 +62,7 @@ object Solution {
     recurses(logEntries, seed)
   }
 
-  def strategy1(logEntries: Seq[LogEntry]) = {
+  def strategy1(guardMap: GuardMap) = {
     def findSleepiestGuard(guardMap: GuardMap): Int = {
       guardMap
         .guardTotalSleepTimes
@@ -81,8 +83,6 @@ object Solution {
         ._1
     }
 
-    val guardMap: GuardMap = buildGuardMap(logEntries)
-
     val guard = findSleepiestGuard(guardMap)
 
     val guardMinutes = findSleepiestMinuteFor(guardMap, guard)
@@ -92,14 +92,13 @@ object Solution {
     guard * guardMinutes
   }
 
-  def strategy2(logEntries: Seq[LogEntry]): Int = {
-    val guardMap: GuardMap = buildGuardMap(logEntries)
-    val wtf: Map[Int, (Int, Int)] = guardMap.guardSleepMinutes map {
+  def strategy2(guardMap: GuardMap): Int = {
+    val maxSleepMinutesPerGuard: Map[Int, (Int, Int)] = guardMap.guardSleepMinutes map {
       guardSleeping: (Int, Seq[Int]) =>
         (guardSleeping._1, guardSleeping._2.groupBy(identity).mapValues(_.size).maxBy(_._2))
     }
 
-    val sleepistGuardMinute = wtf.toList.sortBy(-_._2._2).head
+    val sleepistGuardMinute = maxSleepMinutesPerGuard.toList.sortBy(-_._2._2).head
 
     sleepistGuardMinute._1 * sleepistGuardMinute._2._1
   }
