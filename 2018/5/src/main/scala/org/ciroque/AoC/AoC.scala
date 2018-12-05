@@ -59,9 +59,7 @@ object Solution {
         (lower -> reduced.length)
     }
 
-    val length = wtf.sortBy(_._2).minBy(_._2)._2
-    println(s"wtf: ${length._2}")
-    length
+    wtf.sortBy(_._2).minBy(_._2)._2
   }
 }
 
