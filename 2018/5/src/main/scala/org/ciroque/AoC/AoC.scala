@@ -1,8 +1,9 @@
 package org.ciroque
+import scala.collection.immutable
 
 object AoC extends Data with App {
   println(s"part one: ${Solution.partOne(polymer)}")
-  println(s"part one: ${Solution.partTwo(polymer)}")
+  println(s"part two: ${Solution.partTwo(polymer)}")
 }
 
 object Solution {
@@ -10,13 +11,6 @@ object Solution {
   val uppers = 'A' to 'Z'
   val combos = (lowers zip uppers).toList ++ (uppers zip lowers).toList
   val reducibleUnits: Seq[String] = combos flatMap { combo => List(s"${combo._1}${combo._2}", s"${combo._2}${combo._1}")}
-
-  lazy val combinations: Seq[String] = {
-    val lowers = 'a' to 'z'
-    val uppers = 'A' to 'Z'
-    val combos = (lowers zip uppers).toList ++ (uppers zip lowers).toList
-    combos flatMap {combo => List(s"${combo._1}${combo._2}", s"${combo._2}${combo._1}")}
-  }
 
   def containsReducibleUnit(polymer: String): String = {
     @scala.annotation.tailrec
@@ -31,35 +25,26 @@ object Solution {
     recurses(reducibleUnits)
   }
 
-  def partOne(polymer: String): Int = {
-
+  def reducePolymer(polymer: String): String = {
     var reduced = polymer
     var reducible: String = containsReducibleUnit(reduced)
     while(reducible.length == 2) {
       reduced = reduced replace (reducible, "")
       reducible = containsReducibleUnit(reduced)
     }
-    reduced.length
+    reduced
   }
 
-  def partTwo(polymer: String): Int = {
-    def reducePolymer(polymer: String): String = {
-      var reduced = polymer
-      var reducible: String = containsReducibleUnit(reduced)
-      while(reducible.length == 2) {
-        reduced = reduced replace (reducible, "")
-        reducible = containsReducibleUnit(reduced)
-      }
-      reduced
-    }
+  def partOne(polymer: String): Int = reducePolymer(polymer).length
 
-    val wtf = lowers map {
+  def partTwo(polymer: String): Int = {
+    val reducedModifiedPolymerLengths: Seq[(Char, Int)] = lowers map {
       lower: Char =>
         val reduced = reducePolymer(polymer filter(_ != lower) filter(_.toLower != lower))
         (lower -> reduced.length)
     }
 
-    wtf.sortBy(_._2).minBy(_._2)._2
+    reducedModifiedPolymerLengths.sortBy(_._2).minBy(_._2)._2
   }
 }
 
