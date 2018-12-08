@@ -22,13 +22,18 @@ writeAppFile() {
 package org.ciroque
 
 object AoC extends Data with App {
-  println("...Running")
+  println(s"Part One: \${partOne()}")
+  println(s"Part Two: \${partTwo()}")
 }
 
 object Solution {
+    def partOne() = 0
+    def partTwo() = 0
 }
 
 trait Data {
+    lazy val testData = null
+    lazy val fullData = null
 }
 
 EOF
@@ -39,11 +44,11 @@ createDirectories() {
 }
 
 main() {
-  for d in {3..25}
+  for d in {6..25}
   do
     pushd $d
-    writeBuildSbt
-    createDirectories
+#    writeBuildSbt
+#    createDirectories
     pushd $SRC_PATH
     writeAppFile
     popd
