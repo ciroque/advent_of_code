@@ -7,8 +7,8 @@ lazy val testData: List[Result] = List(
 //  Result(17, 1104, 2764),
 //  Result(21, 6111, 54718),
 //  Result(30, 5807, 37305),
-//  Result(470, 72170, 0) // <-- Part One
-  Result(470, 7217000, 0) // <-- Part Two
+  Result(470, 72170, 0) // <-- Part One
+//  Result(470, 7217000, 0) // <-- Part Two
 )
 
 lazy val fullData: List[Result] = List(Result(470, 72170, 0))
