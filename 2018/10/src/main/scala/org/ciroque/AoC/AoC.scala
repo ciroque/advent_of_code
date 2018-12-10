@@ -1,8 +1,5 @@
 package org.ciroque
 
-//import java.awt.image.BufferedImage
-//import java.awt.{Graphics2D, Color, Font, BasicStroke}
-
 import ar.com.hjg.pngj
 import java.io.FileOutputStream
 
