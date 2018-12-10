@@ -8,3 +8,4 @@ settings(
   name := "AoC"
 )
 
+libraryDependencies += "ar.com.hjg" % "pngj" % "2.1.0"
