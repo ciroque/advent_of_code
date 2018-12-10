@@ -7,7 +7,7 @@ import ar.com.hjg.pngj
 import java.io.FileOutputStream
 
 case class Point(x: Int, y:Int)
-case class PointOfLight(group: Int, x: Int, y: Int, deltaX: Int, deltaY: Int)
+case class PointOfLight(x: Int, y: Int, deltaX: Int, deltaY: Int)
 
 object AoC extends Data with App {
   println(s"Part One: ${Solution.partOne(positionData)}")
@@ -17,83 +17,40 @@ object AoC extends Data with App {
 object Solution {
     def partOne(positionData: List[PointOfLight]) = {
 
-      def findBoundingBoxPoints(positions: List[PointOfLight]): (Int, Int, Int, Int) = { // (Top, Left, Bottom, Right)
-        val top = positions.minBy(_.y)
-        val left = positions.minBy(_.x)
-        val bottom = positions.maxBy(_.y)
-        val right = positions.maxBy(_.x)
-        (top.y, left.x, bottom.y, right.x)
-      }
-
-      def calculateMovements(uLimit: Int): List[PointOfLight] = {
-        (0 to uLimit).flatMap {
-          index: Int => {
-            positionData.map {
-              case PointOfLight(_, x, y, deltaX, deltaY) =>
-                PointOfLight(index, x + (index * deltaX), y + (index * deltaY), deltaX, deltaY)
-            }
-          }
-        }.toList
-      }
-
-      def renderFrame(positions: List[PointOfLight], size: Point, offsets: Point, filestamp: Long): Unit = {
-        println(
-          s"""
-             | group: ${positions.head.group}
-             | size: $size
-             | array length: ${size.x * size.y}
-             | offsets: $offsets
-             | filestamp: $filestamp
-             | positions: $positions
-             |
-           """.stripMargin)
-
-        val outputStream = new FileOutputStream(s"${filestamp}-${positions.head.group}.png")
-        val imageInfo = new ar.com.hjg.pngj.ImageInfo(size.x, size.y, 8, false)
-        val png = new ar.com.hjg.pngj.PngWriter(outputStream, imageInfo)
-        png.getMetadata().setDpi(100.0)
-        png.getMetadata().setTimeNow(0)
-        png.getMetadata().setText("KEY", "Advent of Code, Day 10, Part 1")
-
-        (0 to imageInfo.rows - 1).foreach {
-          row =>
-            val line = new ar.com.hjg.pngj.ImageLineByte(imageInfo)
-            png.writeRow(line)
+      def recurses(second: Int, prevYRange: Int, prevPoints: Set[Point]): Int = {
+        val positions = positionData.map {
+          case PointOfLight(x, y, deltaX, deltaY) => Point(x + deltaX * second, y + deltaY * second)
         }
+        val minY = positions.minBy(_.y).y
+        val maxY = positions.maxBy(_.y).y
+        val yRange = maxY - minY
 
-        png.end()
+        if(yRange > prevYRange) {
+          val minX = prevPoints.minBy(_.x).x
+          val maxX = prevPoints.maxBy(_.x).x
+          val minY = prevPoints.minBy(_.y).y
+          val maxY = prevPoints.maxBy(_.y).y
 
+          (minY to maxY).foreach {
+            y =>
+              (minX to maxX).foreach {
+                x =>
+                  val char = if(prevPoints.contains(Point(x, y))) 'X' else ' '
+                  print(char)
+              }
+              println("")
+          }
 
-//        val canvas = new BufferedImage(size.x, size.y, BufferedImage.TYPE_INT_RGB)
-//        val g = canvas.createGraphics()
-//        g.setColor(Color.WHITE)
-//        g.fillRect(0, 0, canvas.getWidth, canvas.getHeight)
-////        g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON)
-//        g.setColor(new Color(0, 128, 0)) // a darker green
-//        g.setFont(new Font("Batang", Font.PLAIN, 1))
-//
-//        positions.foreach {
-//          position => g.drawString("#", position.x + offsets.x, position.y + offsets.y)
-//        }
-//        g.dispose()
-//
-//        javax.imageio.ImageIO.write(canvas, "png", new java.io.File(s"${filestamp}-${positions.head.group}.png"))
+          println("")
+
+          second - 1
+
+        } else {
+          recurses(second + 1, yRange, positions.toSet)
+        }
       }
 
-      def renderFrames(groups: Map[Int, List[PointOfLight]]): Unit = {
-        val filestamp = System.currentTimeMillis / 1000
-        val (top, left, bottom, right) = findBoundingBoxPoints(positionData)
-        val size = Point(Math.abs(right - left), Math.abs(bottom - top))
-        val offsets = Point(Math.abs(Math.min(left, 0)), Math.abs(Math.min(top, 0)))
-
-        groups.foreach(group => renderFrame(group._2, size, offsets, filestamp))
-      }
-
-      val movementGroups = calculateMovements(10).groupBy(x => x.group)
-
-      renderFrames(movementGroups)
-
-      0
+      recurses(0, Int.MaxValue, Set[Point]())
     }
     def partTwo() = 0
 }
@@ -516,7 +473,7 @@ trait Data {
 //  lazy val positionData: List[PointOfLight] = testData.map {
   lazy val positionData: List[PointOfLight] = fullData.map {
     case PositionExtractor(x, y, deltaX, deltaY) =>
-      PointOfLight(0, x.trim.toInt, y.trim.toInt, deltaX.trim.toInt, deltaY.trim.toInt)
+      PointOfLight(x.trim.toInt, y.trim.toInt, deltaX.trim.toInt, deltaY.trim.toInt)
   }
 }
 
