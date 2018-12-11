@@ -10,7 +10,6 @@ lazy val GRID_SIZE = 300
 // Here is the key to immortality...
 //((99 / 100) % 10) % 10
 
-
 def calculatePowerLevel(x: Int, y: Int): Int = (((((((x + 10) * y) + gridSerialNumber) * (x + 10)) / 100) % 10) % 10) - 5
 
 def cellsAround(grid: List[List[Int]], x: Int, y: Int): Int = {
@@ -33,6 +32,8 @@ def cellsAround(grid: List[List[Int]], x: Int, y: Int): Int = {
   list.sum
 }
 
+var totalPowerLevel: Int = 0
+
 def buildGrid(gridSize: Int, candidates: mutable.Set[(Int, Int)]): List[List[Int]] = {
 
   def inBounds(x: Int, y: Int): Boolean = (x + 2) <= gridSize && (y + 2) <= gridSize
@@ -45,6 +46,7 @@ def buildGrid(gridSize: Int, candidates: mutable.Set[(Int, Int)]): List[List[Int
           if(p == 4 && inBounds(x, y))  {
             candidates.add((x, y))
           }
+          totalPowerLevel = totalPowerLevel + p
           p
       }.toList
   }.toList
@@ -68,3 +70,5 @@ var candidateCells = mutable.Set[(Int, Int)]()
 val grid = buildGrid(GRID_SIZE, candidateCells)
 
 findLargestTotalPower(3, candidateCells.toList, grid, 0, (-1, -1))
+
+println(s"UNLIMITED POWER: $totalPowerLevel")
