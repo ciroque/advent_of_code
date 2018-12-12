@@ -4,6 +4,11 @@
 
  */
 
+301 % 300
+
+
+
+
 val GridSize = 300
 
 lazy val gridSerialNumber = 7511  // <-- Actual Input

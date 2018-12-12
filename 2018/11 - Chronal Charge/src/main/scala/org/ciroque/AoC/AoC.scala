@@ -25,18 +25,23 @@ object Solution {
   private def createPowerMatrix(gridSerialNumber: Int, gridSize: Int): List[FuelCell] = {
     def calculatePowerLevel(x: Int, y: Int): Int = (((((((x + 10) * y) + gridSerialNumber) * (x + 10)) / 100) % 10) % 10) - 5
 
-    (for(
-      i <- 0 until (gridSize * gridSize);
+    val coreList = (for(
+      i <- 0 to (gridSize * gridSize);
       x = i % gridSize;
       y = i / gridSize
     )
-      yield FuelCell(i, Coordinate(x, y), calculatePowerLevel(x, y))).toList
+    yield FuelCell(i, Coordinate(x, y), calculatePowerLevel(x, y))).toList
+
+    val xMaxList = (0 to gridSize).map(index => FuelCell(index * 300, Coordinate(index, 300), calculatePowerLevel(index, 300)))
+    val yMaxList = (0 to gridSize).map(index => FuelCell(index * 300, Coordinate(300, index), calculatePowerLevel(300, index)))
+
+    coreList ++ xMaxList ++ yMaxList
   }
 
   private def findCandidates(gridSize: Int, targetGridSize: Int, powerMatrix: List[FuelCell]): List[FuelCell] = {
     powerMatrix.filter {
       pc =>
-//        pc.powerLevel == 4 &&
+        pc.powerLevel > 0 &&
           (pc.coordinate.x + targetGridSize) <= gridSize &&
           (pc.coordinate.y + targetGridSize) <= gridSize
     }
@@ -47,7 +52,6 @@ object Solution {
       case Nil => currentHighest
       case head :: tail =>
         val sum = lookArounds.map { la => power((head.coordinate.x + la._1, head.coordinate.y + la._2))}.sum
-//        println(s">>> ${lookArounds.length} SUM: $sum")
         val nextCurrentHighest = if(sum > currentHighest.powerLevel) FuelCell(head.index, head.coordinate, sum) else currentHighest
         findHighestPowerLevel(lookArounds, tail, power, nextCurrentHighest)
     }
@@ -70,26 +74,23 @@ object Solution {
       val lookAroundOffsets = createLookAroundOffsets(targetGridSize, gridSize)
       val candidateCells = findCandidates(gridSize, targetGridSize, powerMatrix)
 
-      if(lastSum < 0) currentHighest
-      else {
-        targetGridSize match {
-          case 0 => currentHighest
-          case _ => {
-            val highestInTargetGridSize = findHighestPowerLevel(lookAroundOffsets, candidateCells, power, SeedFuelCell)
+      targetGridSize match {
+        case 0 => currentHighest
+        case _ => {
+          val highestInTargetGridSize = findHighestPowerLevel(lookAroundOffsets, candidateCells, power, SeedFuelCell)
 
-            val nextHighest = if(highestInTargetGridSize.powerLevel > currentHighest.powerLevel) {
-              FuelCell(
-                targetGridSize,
-                Coordinate(highestInTargetGridSize.coordinate.x - 1, highestInTargetGridSize.coordinate.y + 1),
-                highestInTargetGridSize.powerLevel
-              )
-            } else {
-              currentHighest
+          val nextHighest = if(highestInTargetGridSize.powerLevel > currentHighest.powerLevel) {
+            FuelCell(
+              targetGridSize,
+              Coordinate(highestInTargetGridSize.coordinate.x - 1, highestInTargetGridSize.coordinate.y + 1),
+              highestInTargetGridSize.powerLevel
+            )
+          } else {
+            currentHighest
 
-            }
-
-            recurses(targetGridSize + 1, nextHighest, highestInTargetGridSize.powerLevel)
           }
+
+          recurses(targetGridSize + 1, nextHighest, highestInTargetGridSize.powerLevel)
         }
       }
     }
@@ -100,8 +101,8 @@ object Solution {
 
 trait Data {
   val GridSize = 300
-//  lazy val gridSerialNumber = 7511  // <-- Actual Input
-  lazy val gridSerialNumber = 18
+  lazy val gridSerialNumber = 7511  // <-- Actual Input
+//  lazy val gridSerialNumber = 18
 //  lazy val gridSerialNumber = 42
 }
 
