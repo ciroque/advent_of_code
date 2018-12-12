@@ -4,14 +4,17 @@
 
  */
 
+val GridSize = 300
+
 lazy val gridSerialNumber = 7511  // <-- Actual Input
 //lazy val gridSerialNumber = 18
 //lazy val gridSerialNumber = 42
 
 case class Coordinate(x: Int, y: Int)
+
 case class FuelCell(index: Int, coordinate: Coordinate, powerLevel: Int)
 
-val GridSize = 300
+lazy val SeedFuelCell: FuelCell = FuelCell(-1, Coordinate(-1, -1), -1)
 
 def createLookAroundOffsets(distance: Int, gridSize: Int): List[(Int, Int)] = {
   (for(
@@ -42,30 +45,47 @@ def findCandidates(gridSize: Int, targetGridSize: Int, powerMatrix: List[FuelCel
   }
 }
 
+def findHighestPowerLevel(lookArounds: List[(Int, Int)], candidates: List[FuelCell], power: Map[(Int, Int), Int], currentHighest: FuelCell): FuelCell = {
+  candidates match {
+    case Nil => currentHighest
+    case head :: tail =>
+      val sum = lookArounds.map { la => power((head.coordinate.x + la._1, head.coordinate.y + la._2))}.sum
+      val nextCurrentHighest = if(sum > currentHighest.powerLevel) FuelCell(head.index, head.coordinate, sum) else currentHighest
+      findHighestPowerLevel(lookArounds, tail, power, nextCurrentHighest)
+  }
+}
+
 def partOne(): FuelCell = {
   val TargetGridSize = 3
   val powerMatrix = createPowerMatrix(GridSize)
   val candidateCells = findCandidates(GridSize, TargetGridSize, powerMatrix)
   val lookAroundOffsets = createLookAroundOffsets(TargetGridSize, GridSize)
+  val power = powerMatrix.map { cell => (cell.coordinate.x, cell.coordinate.y) -> cell.powerLevel }.toMap
+  findHighestPowerLevel(lookAroundOffsets, candidateCells, power, SeedFuelCell)
+}
 
-  def recurses(lookArounds: List[(Int, Int)], candidates: List[FuelCell], power: Map[(Int, Int), Int], currentHighest: FuelCell): FuelCell = {
-    candidates match {
-      case Nil => currentHighest
-      case head :: tail =>
-        val sum = lookArounds.map { la => power((head.coordinate.x + la._1, head.coordinate.y + la._2))}.sum
-        val nextCurrentHighest = if(sum > currentHighest.powerLevel) FuelCell(head.index, head.coordinate, sum) else currentHighest
-        recurses(lookArounds, tail, power, nextCurrentHighest)
+
+def partTwo(): FuelCell = {
+  val powerMatrix = createPowerMatrix(GridSize)
+  val power = powerMatrix.map { cell => (cell.coordinate.x, cell.coordinate.y) -> cell.powerLevel }.toMap
+
+  def recurses(targetGridSize: Int, currentHighest: FuelCell): FuelCell = {
+    println(s"... $currentHighest ... $targetGridSize")
+    val candidateCells = findCandidates(GridSize, targetGridSize, powerMatrix)
+    val lookAroundOffsets = createLookAroundOffsets(targetGridSize, GridSize)
+
+    targetGridSize match {
+      case 0 => currentHighest
+      case _ => {
+        val highestInTargetGridSize = findHighestPowerLevel(lookAroundOffsets, candidateCells, power, SeedFuelCell)
+        val nextHighest = if(highestInTargetGridSize.powerLevel > currentHighest.powerLevel) highestInTargetGridSize else currentHighest
+        recurses(targetGridSize - 1, currentHighest)
+      }
     }
   }
 
-  val power = powerMatrix.map { cell => (cell.coordinate.x, cell.coordinate.y) -> cell.powerLevel }.toMap
-  recurses(lookAroundOffsets, candidateCells, power, FuelCell(-1, Coordinate(-1, -1), -1))
-}
-
-
-def partTwo(): (Int, Int, Int) = {
-
-  (-1, -1, -1)
+  recurses(GridSize, SeedFuelCell)
 }
 
 println(s"Part One: ${partOne()}")
+println(s"Part Two: ${partTwo()}")
