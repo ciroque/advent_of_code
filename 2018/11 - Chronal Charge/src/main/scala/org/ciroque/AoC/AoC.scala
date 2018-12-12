@@ -26,17 +26,31 @@ object Solution {
     def calculatePowerLevel(x: Int, y: Int): Int = (((((((x + 10) * y) + gridSerialNumber) * (x + 10)) / 100) % 10) % 10) - 5
 
     val coreList = (for(
-      i <- 0 to (gridSize * gridSize);
+      i <- 0 until (gridSize * gridSize);
       x = i % gridSize;
       y = i / gridSize
     )
     yield FuelCell(i, Coordinate(x, y), calculatePowerLevel(x, y))).toList
 
-    val xMaxList = (0 to gridSize).map(index => FuelCell(index * 300, Coordinate(index, 300), calculatePowerLevel(index, 300)))
-    val yMaxList = (0 to gridSize).map(index => FuelCell(index * 300, Coordinate(300, index), calculatePowerLevel(300, index)))
+    val baseIndex = gridSize * gridSize
+
+    val xMaxList = (0 until gridSize).map(index => FuelCell(baseIndex + index, Coordinate(index, 300), calculatePowerLevel(index, 300)))
+    val yMaxList = (0 until gridSize).map(index => FuelCell(baseIndex + index + gridSize, Coordinate(300, index), calculatePowerLevel(300, index)))
 
     coreList ++ xMaxList ++ yMaxList
   }
+
+  // https://en.wikipedia.org/wiki/Summed-area_table
+  // I(x,y) = i(x,y) + I(x, y - 1) + I(x - 1, y) + I(x - 1, y - 1)
+  private def createSummedAreaTable(gridSize: Int, powerMatrix: List[FuelCell]): List[Int] = {
+    val startIndex = (1 * gridSize) + 1
+    val length = gridSize * gridSize
+    val fuelCells = powerMatrix.toArray
+    ((startIndex to gridSize * gridSize).map {
+      index => fuelCells(index).powerLevel + fuelCells(index - gridSize).powerLevel + fuelCells(index - 1).powerLevel + fuelCells(index - gridSize - 1).powerLevel
+    }).toList
+  }
+
 
   private def findCandidates(gridSize: Int, targetGridSize: Int, powerMatrix: List[FuelCell]): List[FuelCell] = {
     powerMatrix.filter {
@@ -67,35 +81,53 @@ object Solution {
   }
 
   def partTwo(gridSerialNumber: Int, gridSize: Int): FuelCell = {
+    val s1 = System.currentTimeMillis()
     val powerMatrix = createPowerMatrix(gridSerialNumber, gridSize)
-    val power = powerMatrix.map { cell => (cell.coordinate.x, cell.coordinate.y) -> cell.powerLevel }.toMap
+    val e1 = System.currentTimeMillis()
 
-    def recurses(targetGridSize: Int, currentHighest: FuelCell, lastSum: Int): FuelCell = {
-      val lookAroundOffsets = createLookAroundOffsets(targetGridSize, gridSize)
-      val candidateCells = findCandidates(gridSize, targetGridSize, powerMatrix)
+    val s2 = System.currentTimeMillis()
+    createSummedAreaTable(gridSize, powerMatrix)
+    val e2 = System.currentTimeMillis()
 
-      targetGridSize match {
-        case 0 => currentHighest
-        case _ => {
-          val highestInTargetGridSize = findHighestPowerLevel(lookAroundOffsets, candidateCells, power, SeedFuelCell)
+    println(
+      s"""
+         | createPowerMatrix took ${(e1 - s1) / 1000} seconds
+         | createSummedAreaTable took ${(e2 - s2) / 1000} seconds
+         |
+       """.stripMargin)
 
-          val nextHighest = if(highestInTargetGridSize.powerLevel > currentHighest.powerLevel) {
-            FuelCell(
-              targetGridSize,
-              Coordinate(highestInTargetGridSize.coordinate.x - 1, highestInTargetGridSize.coordinate.y + 1),
-              highestInTargetGridSize.powerLevel
-            )
-          } else {
-            currentHighest
+//    powerMatrix.foreach(fc => println(fc.index))
 
-          }
+//    val power = powerMatrix.map { cell => (cell.coordinate.x, cell.coordinate.y) -> cell.powerLevel }.toMap
+//
+//    def recurses(targetGridSize: Int, currentHighest: FuelCell, lastSum: Int): FuelCell = {
+//      val lookAroundOffsets = createLookAroundOffsets(targetGridSize, gridSize)
+//      val candidateCells = findCandidates(gridSize, targetGridSize, powerMatrix)
+//
+//      targetGridSize match {
+//        case 0 => currentHighest
+//        case _ => {
+//          val highestInTargetGridSize = findHighestPowerLevel(lookAroundOffsets, candidateCells, power, SeedFuelCell)
+//
+//          val nextHighest = if(highestInTargetGridSize.powerLevel > currentHighest.powerLevel) {
+//            FuelCell(
+//              targetGridSize,
+//              Coordinate(highestInTargetGridSize.coordinate.x - 1, highestInTargetGridSize.coordinate.y + 1),
+//              highestInTargetGridSize.powerLevel
+//            )
+//          } else {
+//            currentHighest
+//
+//          }
+//
+//          recurses(targetGridSize + 1, nextHighest, highestInTargetGridSize.powerLevel)
+//        }
+//      }
+//    }
+//
+//    recurses(1, SeedFuelCell, 0)
 
-          recurses(targetGridSize + 1, nextHighest, highestInTargetGridSize.powerLevel)
-        }
-      }
-    }
-
-    recurses(1, SeedFuelCell, 0)
+    SeedFuelCell
   }
 }
 
