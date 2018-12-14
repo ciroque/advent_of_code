@@ -19,10 +19,6 @@ def generateGrid(gridSize: Int): List[Int] = {
 
 def generateSummedAreaTable(gridSize: Int, grid: Array[Int]): Array[Int] = {
 
-  def modPow2(n:Int, p2: Int): Int = n & (p2-1)
-  def isPow2(n:Int):Boolean = ((n-1) & n ) == 0
-  def modFast(n:Int, b: Int): Int = if (isPow2(b)) modPow2(n,b) else n % b
-
   // Sums the rows
   @scala.annotation.tailrec
   def recursesX(size: Int, currentIndex: Int, grid: Array[Int], tableSoFar: Array[Int]): Array[Int] = {
@@ -30,8 +26,7 @@ def generateSummedAreaTable(gridSize: Int, grid: Array[Int]): Array[Int] = {
     else {
       val prevIndex = currentIndex - 1
       val nextValue = if(prevIndex < 0) 0 else tableSoFar(prevIndex)
-      val multiplier = Math.min(modFast(currentIndex, gridSize), 1) // captures start of next row
-//      val multiplier = Math.min(currentIndex % gridSize, 1) // captures start of next row
+      val multiplier = Math.min(currentIndex % gridSize, 1) // captures start of next row
       tableSoFar(currentIndex) = grid(currentIndex) + (nextValue * multiplier)
 
       recursesX(size, currentIndex + 1, grid, tableSoFar)
