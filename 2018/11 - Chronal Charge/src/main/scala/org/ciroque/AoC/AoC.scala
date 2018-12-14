@@ -1,13 +1,16 @@
 package org.ciroque
 
+import org.ciroque.shared.Timing._
+
 case class Coordinate(x: Int, y: Int)
 
 case class FuelCell(index: Int, coordinate: Coordinate, powerLevel: Int)
 
 
 object AoC extends Data with App {
-  println(s"Part One: ${Solution.partOne(gridSerialNumber, GridSize)}")
-  println(s"Part Two: ${Solution.partTwo(gridSerialNumber, GridSize)}")
+  println(s"Part One: ${ timed("partOne") { Solution.partOne(gridSerialNumber, GridSize)} }")
+  println(s"Part Two Bee: ${ timed("partTwoBee") { Solution.partTwoBee(gridSerialNumber, GridSize)} }")
+//  println(s"Part Two: ${ timed("partTwo") { Solution.partTwo(gridSerialNumber, GridSize)} }")
 }
 
 object Solution {
@@ -42,15 +45,18 @@ object Solution {
 
   // https://en.wikipedia.org/wiki/Summed-area_table
   // I(x,y) = i(x,y) + I(x, y - 1) + I(x - 1, y) + I(x - 1, y - 1)
-  private def createSummedAreaTable(gridSize: Int, powerMatrix: List[FuelCell]): List[Int] = {
-    val startIndex = (1 * gridSize) + 1
-    val length = gridSize * gridSize
-    val fuelCells = powerMatrix.toArray
-    ((startIndex to gridSize * gridSize).map {
-      index => fuelCells(index).powerLevel + fuelCells(index - gridSize).powerLevel + fuelCells(index - 1).powerLevel + fuelCells(index - gridSize - 1).powerLevel
-    }).toList
+  private def createSummedAreaTable(gridSize: Int, powerMatrix: List[FuelCell]): Array[Int] = {
+    for(
+      x <- 0 to gridSize;
+      index = ()
+    )
+//    val startIndex = (1 * gridSize) + 1
+//    val length = gridSize * gridSize
+//    val fuelCells = powerMatrix.toArray
+//    ((startIndex to gridSize * gridSize).map {
+//      index => fuelCells(index).powerLevel + fuelCells(index - gridSize).powerLevel + fuelCells(index - 1).powerLevel - fuelCells(index - gridSize - 1).powerLevel
+//    }).toArray
   }
-
 
   private def findCandidates(gridSize: Int, targetGridSize: Int, powerMatrix: List[FuelCell]): List[FuelCell] = {
     powerMatrix.filter {
@@ -73,59 +79,66 @@ object Solution {
 
   def partOne(gridSerialNumber: Int, gridSize: Int): FuelCell = {
     val TargetGridSize = 3
-    val powerMatrix = createPowerMatrix(gridSerialNumber, gridSize)
-    val candidateCells = findCandidates(gridSize, TargetGridSize, powerMatrix)
-    val lookAroundOffsets = createLookAroundOffsets(TargetGridSize, gridSize)
-    val power = powerMatrix.map { cell => (cell.coordinate.x, cell.coordinate.y) -> cell.powerLevel }.toMap
-    findHighestPowerLevel(lookAroundOffsets, candidateCells, power, SeedFuelCell)
+    val powerMatrix = timed("createPowerMatrix") { createPowerMatrix(gridSerialNumber, gridSize) }
+    val candidateCells = timed("findCandidates") { findCandidates(gridSize, TargetGridSize, powerMatrix) }
+    val lookAroundOffsets = timed("createLookAroundOffsets") { createLookAroundOffsets(TargetGridSize, gridSize) }
+    val power = timed("powerMatrix to Map") { powerMatrix.map { cell => (cell.coordinate.x, cell.coordinate.y) -> cell.powerLevel }.toMap }
+    timed("findHighestPowerLevel") { findHighestPowerLevel(lookAroundOffsets, candidateCells, power, SeedFuelCell) }
   }
 
   def partTwo(gridSerialNumber: Int, gridSize: Int): FuelCell = {
-    val s1 = System.currentTimeMillis()
-    val powerMatrix = createPowerMatrix(gridSerialNumber, gridSize)
-    val e1 = System.currentTimeMillis()
+    val powerMatrix = timed("createPowerMatrix") { createPowerMatrix(gridSerialNumber, gridSize) }
+    val power = timed("powerMatrix to Map") { powerMatrix.map { cell => (cell.coordinate.x, cell.coordinate.y) -> cell.powerLevel }.toMap }
 
-    val s2 = System.currentTimeMillis()
-    createSummedAreaTable(gridSize, powerMatrix)
-    val e2 = System.currentTimeMillis()
+    def recurses(targetGridSize: Int, currentHighest: FuelCell, lastSum: Int): FuelCell = {
+      val lookAroundOffsets = timed("createLookAroundOffsets") { createLookAroundOffsets(targetGridSize, gridSize) }
+      val candidateCells = timed("findCandidates") { findCandidates(gridSize, targetGridSize, powerMatrix) }
+
+      targetGridSize match {
+        case 0 => currentHighest
+        case _ => {
+          val highestInTargetGridSize = timed("findHighestPowerLevel") { findHighestPowerLevel(lookAroundOffsets, candidateCells, power, SeedFuelCell) }
+
+          val nextHighest = if(highestInTargetGridSize.powerLevel > currentHighest.powerLevel) {
+            FuelCell(
+              targetGridSize,
+              Coordinate(highestInTargetGridSize.coordinate.x - 1, highestInTargetGridSize.coordinate.y + 1),
+              highestInTargetGridSize.powerLevel
+            )
+          } else {
+            currentHighest
+
+          }
+
+            timed("recurses") { recurses(targetGridSize + 1, nextHighest, highestInTargetGridSize.powerLevel) }
+        }
+      }
+    }
+
+    recurses(1, SeedFuelCell, 0)
+
+    SeedFuelCell
+  }
+
+  def partTwoBee(gridSerialNumber: Int, gridSize: Int): FuelCell = {
+    val powerMatrix = timed("createPowerMatrixMap") { createPowerMatrix(gridSerialNumber, gridSize) }
+    val summedAreaTable: Array[Int] = timed("createSummedAreaTable") { createSummedAreaTable(gridSize, powerMatrix) }
+
+    // How to use the Summed Area Table?
+
+    val A = (22 / gridSize) + 21
+    val B = (22 / gridSize) + 23
+    val C = (24 / gridSize) + 21
+    val D = (24 / gridSize) + 23
 
     println(
       s"""
-         | createPowerMatrix took ${(e1 - s1) / 1000} seconds
-         | createSummedAreaTable took ${(e2 - s2) / 1000} seconds
+         | summed area table" ${summedAreaTable.mkString(" ")}
+         | length of summed area table: ${summedAreaTable.length}
+         | bottom - right value of summed area table: ${summedAreaTable(89699)}
+         | (21,22,3) = ${summedAreaTable(D)} - ${summedAreaTable(B)} - ${summedAreaTable(C)} + ${summedAreaTable(A)}
          |
        """.stripMargin)
-
-//    powerMatrix.foreach(fc => println(fc.index))
-
-//    val power = powerMatrix.map { cell => (cell.coordinate.x, cell.coordinate.y) -> cell.powerLevel }.toMap
-//
-//    def recurses(targetGridSize: Int, currentHighest: FuelCell, lastSum: Int): FuelCell = {
-//      val lookAroundOffsets = createLookAroundOffsets(targetGridSize, gridSize)
-//      val candidateCells = findCandidates(gridSize, targetGridSize, powerMatrix)
-//
-//      targetGridSize match {
-//        case 0 => currentHighest
-//        case _ => {
-//          val highestInTargetGridSize = findHighestPowerLevel(lookAroundOffsets, candidateCells, power, SeedFuelCell)
-//
-//          val nextHighest = if(highestInTargetGridSize.powerLevel > currentHighest.powerLevel) {
-//            FuelCell(
-//              targetGridSize,
-//              Coordinate(highestInTargetGridSize.coordinate.x - 1, highestInTargetGridSize.coordinate.y + 1),
-//              highestInTargetGridSize.powerLevel
-//            )
-//          } else {
-//            currentHighest
-//
-//          }
-//
-//          recurses(targetGridSize + 1, nextHighest, highestInTargetGridSize.powerLevel)
-//        }
-//      }
-//    }
-//
-//    recurses(1, SeedFuelCell, 0)
 
     SeedFuelCell
   }
