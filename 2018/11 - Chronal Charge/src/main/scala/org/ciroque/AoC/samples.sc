@@ -10,14 +10,14 @@ def timed[R](method: String = "method")(block: => R): R = {
 
 
 /* ********** ********** ********** ********** ********** ********** ********** **********
-// * O(n*m) implementations
+// * O(2n) implementations
 **/
 
 def generateGrid(gridSize: Int): List[Int] = {
   (for(index <- 0 until GridSize * GridSize) yield index % GridSize + 1).toList
 }
 
-def generateSummedAreaTable(gridSize: Int, grid: Array[Int]): List[Int] = {
+def generateSummedAreaTable(gridSize: Int, grid: Array[Int]): Array[Int] = {
 
   def modPow2(n:Int, p2: Int): Int = n & (p2-1)
   def isPow2(n:Int):Boolean = ((n-1) & n ) == 0
@@ -40,8 +40,8 @@ def generateSummedAreaTable(gridSize: Int, grid: Array[Int]): List[Int] = {
 
   // sums the columns
   @scala.annotation.tailrec
-  def recursesY(size: Int, currentIndex: Int, sat: Array[Int]): List[Int] = {
-    if(currentIndex == size) sat.toList
+  def recursesY(size: Int, currentIndex: Int, sat: Array[Int]): Array[Int] = {
+    if(currentIndex == size) sat
     else {
       val currentValue = sat(currentIndex)
       val aboveIndex = currentIndex - gridSize
@@ -52,9 +52,9 @@ def generateSummedAreaTable(gridSize: Int, grid: Array[Int]): List[Int] = {
     }
   }
 
-  val xSums = recursesX(gridSize * gridSize, 0, grid, Array.ofDim[Int](gridSize * gridSize))
+  val xSums = timed("recursesX") { recursesX(gridSize * gridSize, 0, grid, Array.ofDim[Int](gridSize * gridSize)) }
 
-  recursesY(gridSize * gridSize, 0, xSums)
+  timed("recursesY") { recursesY(gridSize * gridSize, 0, xSums) }
 }
 
 val grid1 = timed("generateGrid") { generateGrid(GridSize).toArray }
