@@ -1,4 +1,4 @@
-package org.ciroque
+package org.ciroque.naive
 
 import org.ciroque.shared.Timing._
 
@@ -9,7 +9,6 @@ case class FuelCell(index: Int, coordinate: Coordinate, powerLevel: Int)
 
 object AoC extends Data with App {
   println(s"Part One: ${ timed("partOne") { Solution.partOne(gridSerialNumber, GridSize)} }")
-  println(s"Part Two Bee: ${ timed("partTwoBee") { Solution.partTwoBee(gridSerialNumber, GridSize)} }")
 //  println(s"Part Two: ${ timed("partTwo") { Solution.partTwo(gridSerialNumber, GridSize)} }")
 }
 
@@ -41,21 +40,6 @@ object Solution {
     val yMaxList = (0 until gridSize).map(index => FuelCell(baseIndex + index + gridSize, Coordinate(300, index), calculatePowerLevel(300, index)))
 
     coreList ++ xMaxList ++ yMaxList
-  }
-
-  // https://en.wikipedia.org/wiki/Summed-area_table
-  // I(x,y) = i(x,y) + I(x, y - 1) + I(x - 1, y) + I(x - 1, y - 1)
-  private def createSummedAreaTable(gridSize: Int, powerMatrix: List[FuelCell]): Array[Int] = {
-    for(
-      x <- 0 to gridSize;
-      index = ()
-    )
-//    val startIndex = (1 * gridSize) + 1
-//    val length = gridSize * gridSize
-//    val fuelCells = powerMatrix.toArray
-//    ((startIndex to gridSize * gridSize).map {
-//      index => fuelCells(index).powerLevel + fuelCells(index - gridSize).powerLevel + fuelCells(index - 1).powerLevel - fuelCells(index - gridSize - 1).powerLevel
-//    }).toArray
   }
 
   private def findCandidates(gridSize: Int, targetGridSize: Int, powerMatrix: List[FuelCell]): List[FuelCell] = {
@@ -116,29 +100,6 @@ object Solution {
     }
 
     recurses(1, SeedFuelCell, 0)
-
-    SeedFuelCell
-  }
-
-  def partTwoBee(gridSerialNumber: Int, gridSize: Int): FuelCell = {
-    val powerMatrix = timed("createPowerMatrixMap") { createPowerMatrix(gridSerialNumber, gridSize) }
-    val summedAreaTable: Array[Int] = timed("createSummedAreaTable") { createSummedAreaTable(gridSize, powerMatrix) }
-
-    // How to use the Summed Area Table?
-
-    val A = (22 / gridSize) + 21
-    val B = (22 / gridSize) + 23
-    val C = (24 / gridSize) + 21
-    val D = (24 / gridSize) + 23
-
-    println(
-      s"""
-         | summed area table" ${summedAreaTable.mkString(" ")}
-         | length of summed area table: ${summedAreaTable.length}
-         | bottom - right value of summed area table: ${summedAreaTable(89699)}
-         | (21,22,3) = ${summedAreaTable(D)} - ${summedAreaTable(B)} - ${summedAreaTable(C)} + ${summedAreaTable(A)}
-         |
-       """.stripMargin)
 
     SeedFuelCell
   }
