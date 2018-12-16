@@ -3,72 +3,69 @@ package org.ciroque.optimized
 import Timing._
 
 object ChronalCharge extends Data with App {
-  val m = timed("createPowerMatrix") { PuzzleSolution.createPowerMatrix(gridSerialNumber, gridSize) }
-  val n = timed("createPowerMatrix2") { PuzzleSolution.createPowerMatrix2(gridSerialNumber, gridSize)}.toArray
-
-  val mSat = timed("SummedAreaTable.generateSummedAreaTableRecursive") { SummedAreaTable.generateSummedAreaTableRecursive(gridSize, m) }
-  val nSat = timed("SummedAreaTable.generateSummedAreaTableIterative") { SummedAreaTable.generateSummedAreaTableIterative(gridSize, n) }
-
-  println(s"Array: ${m.toList diff n.toList}")
-  println(s"Array: ${mSat.toList diff nSat.toList}")
+//  val m = timed("createPowerMatrix") { PuzzleSolution.createPowerMatrix(gridSerialNumber, gridSize) }
+//  val n = timed("createPowerMatrix2") { PuzzleSolution.createPowerMatrix2(gridSerialNumber, gridSize)}.toArray
+//
+//  val mSat = timed("SummedAreaTable.generateSummedAreaTableRecursive") { SummedAreaTable.generateSummedAreaTableRecursive(gridSize, m) }
+//  val nSat = timed("SummedAreaTable.generateSummedAreaTableIterative") { SummedAreaTable.generateSummedAreaTableIterative(gridSize, n) }
+//
+//  println(s"Array: ${m.toList diff n.toList}")
+//  println(s"Array: ${mSat.toList diff nSat.toList}")
 
   println("Actual Part One solution: FuelCell(6621,Coordinate(21,22),34)")
   println(s"partOne: ${ timed("partOne") { PuzzleSolution.partOne(gridSerialNumber, gridSize)}}")
 
+  println("Actual Part Two solution: FuelCell(6621,Coordinate(235,288),34)")
+  println(s"partTwo: ${ timed("partTwo") { PuzzleSolution.partTwo(gridSerialNumber, gridSize)}}")
+
 
   println(s"Wikipedia Grid: ${ timed("Wikipedia Grid") { PuzzleSolution.wikipediaVerification() } }")
-  println(s"ATI Grid: ${ timed("Wikipedia Grid") { PuzzleSolution.atiVerification() } }")
+//  println(s"ATI Grid: ${ timed("Wikipedia Grid") { PuzzleSolution.atiVerification() } }")
 }
 
 object PuzzleSolution {
 
+  // http://amd-dev.wpengine.netdna-cdn.com/wordpress/media/2012/10/GDC2005_SATEnvironmentReflections.pdf
   def atiVerification(): List[Int] = {
     val atiGrid = List(2, 3, 2, 1, 3, 0, 1, 2, 1, 3, 1, 0, 1, 4, 2, 2).toArray
     SummedAreaTable.generateSummedAreaTableIterative(4, atiGrid).toList
   }
 
-  def wikipediaVerification(): List[Int] = {
+  // https://en.wikipedia.org/wiki/Summed-area_table
+  def wikipediaVerification(): Int = {
     val wikipediaGrid = List(31, 2, 4, 33, 5, 36, 12, 26, 9, 10, 29, 25, 13, 17, 21, 22, 20, 18, 24, 23, 15, 16, 14, 19, 30, 8, 28, 27, 11, 7, 1, 35, 34, 3, 32, 6).toArray
-    SummedAreaTable.generateSummedAreaTableIterative(6, wikipediaGrid).toList
+    val sat = SummedAreaTable.generateSummedAreaTableIterative(6, wikipediaGrid)
+    calculateSum(20, 3, 6, sat)._3
   }
 
-  def partOne(gridSerialNumber: Int, gridSize: Int): (Int, Int) = {
-    val powerMatrix = createPowerMatrix2(gridSerialNumber, gridSize)
-    val summedAreaTable = SummedAreaTable.generateSummedAreaTableRecursive(gridSize, powerMatrix)
+  /**
+    *
+    * @param x
+    * @param y
+    * @param size
+    * @param gridSize
+    * @param sat
+    * @return
+    */
+  def calculateSum(index: Int, size: Int, gridSize: Int, sat: Array[Int]): (Int, Int, Int) = {
 
-    val x = 21
-    val y = 22
+    // The proper use of the Summed Area Table means we need to adjust up and to the left of the target area,
+    // which also explains the adjustment of the desired grid size...
+    val sum = if(index - gridSize <= 0 || index % gridSize == 0) {
+      sat(index + (gridSize * (size - 1)) - 1 + size)
+    } else {
+      val topLeft = index - (gridSize + 1)
+      val topRight = topLeft + size
+      val bottomLeft = index + (gridSize * (size - 1)) - 1
+      val bottomRight = bottomLeft + size
+      sat(bottomRight) + sat(topLeft) - sat(topRight) - sat(bottomLeft)
+    }
 
-    val topLeft = (y * gridSize) + x                    // A
-    val topRight = (y * gridSize) + (x + 2)             // B
-    val bottomLeft = ((y + 2) * gridSize) + x           // C
-    val bottomRight = ((y + 2) * gridSize) + (x + 2)    // D
-//
-//    val topLeft = ((y - 1) * gridSize) + (x - 1)        // A
-//    val topRight = ((y - 1) * gridSize) + (x + 2)       // B
-//    val bottomLeft = ((y + 2) * gridSize) + (x - 1)     // C
-//    val bottomRight = ((y + 2) * gridSize) + (x + 2)    // D
+  (index % gridSize, index / gridSize, sum)
+}
 
-    val A = summedAreaTable(topLeft)
-    val B = summedAreaTable(topRight)
-    val C = summedAreaTable(bottomLeft)
-    val D = summedAreaTable(bottomRight)
-
-    // D - B - C + A
-    val sum = D + A - B - C
-
-    println(
-      s"""
-         | topLeft: $topLeft
-         | A = $A
-         | B = $B
-         | C = $C
-         | D = $D
-         | sum = $sum
-         |
-       """.stripMargin)
-
-    (-1, -1)
+  def generateCandidateCoordinates(gridSize: Int, size: Int): Array[Int] = {
+    (for(index <- 0 to (gridSize * gridSize) if((index % gridSize + (size - 1) < gridSize) && (index / gridSize + (size - 1) < gridSize))) yield index).toArray
   }
 
   def createPowerMatrix(gridSerialNumber: Int, gridSize: Int): Array[Int] = {
@@ -99,6 +96,27 @@ object PuzzleSolution {
     val yMaxList = (0 until gridSize).map(index => calculatePowerLevel(300, index)).toList
 
     (coreList ++ xMaxList ++ yMaxList).toArray
+  }
+
+  def partOne(gridSerialNumber: Int, gridSize: Int): (Int, Int, Int) = {
+    val targetSize = 3
+    val powerMatrix = createPowerMatrix2(gridSerialNumber, gridSize)
+    val summedAreaTable = SummedAreaTable.generateSummedAreaTableRecursive(gridSize, powerMatrix)
+    val candidates = generateCandidateCoordinates(gridSize, targetSize)
+    val sums = candidates.map(index => calculateSum(index, targetSize, gridSize, summedAreaTable))
+    sums.maxBy(_._3)
+  }
+
+  def partTwo(gridSerialNumber: Int, gridSize: Int): (Int, Int, Int) = {
+    val targetSizes = (1 until 300).toList
+    val powerMatrix = createPowerMatrix2(gridSerialNumber, gridSize)
+    val summedAreaTable = SummedAreaTable.generateSummedAreaTableRecursive(gridSize, powerMatrix)
+    val sums = targetSizes.flatMap {
+      targetSize =>
+        val candidates = generateCandidateCoordinates(gridSize, targetSize)
+        candidates.map { index => calculateSum(index, targetSize, gridSize, summedAreaTable) }
+    }
+    sums.maxBy(_._3)
   }
 }
 

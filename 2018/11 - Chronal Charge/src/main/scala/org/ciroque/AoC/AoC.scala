@@ -7,7 +7,7 @@ case class Coordinate(x: Int, y: Int)
 case class FuelCell(index: Int, coordinate: Coordinate, powerLevel: Int)
 
 
-object AoC extends Data with App {
+object AoC extends Data /* with App */ {
   println(s"Part One: ${ timed("partOne") { Solution.partOne(gridSerialNumber, GridSize)} }")
 //  println(s"Part Two: ${ timed("partTwo") { Solution.partTwo(gridSerialNumber, GridSize)} }")
 }
@@ -51,6 +51,7 @@ object Solution {
     }
   }
 
+  @scala.annotation.tailrec
   private def findHighestPowerLevel(lookArounds: List[(Int, Int)], candidates: List[FuelCell], power: Map[(Int, Int), Int], currentHighest: FuelCell): FuelCell = {
     candidates match {
       case Nil => currentHighest
